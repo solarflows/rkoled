@@ -111,7 +111,7 @@ int GetMemUsage() {
 // Function to get disk usage percentage
 float GetDiskUsagePercentage() {
     struct statfs diskInfo;
-    if (statfs("/opt", &diskInfo) == -1) {
+    if (statfs("/home", &diskInfo) == -1) {
         return 0.0; // Error
     }
 
