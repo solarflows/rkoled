@@ -10,6 +10,18 @@ typedef enum
     STATE_FAIL,
 }Net_State;
 
+// 新增结构体用于网卡信息
+#include <stdbool.h>
+typedef struct {
+    char name[32];
+    bool is_vlan;
+    bool is_physical;
+    bool is_up;
+} NetIfInfo;
+
+int GetAllNetIfs(NetIfInfo* ifs, int max_ifs, int* phy_count, int* vlan_count, int* up_count);
+NetIfInfo* GetFirstActivePhysical(NetIfInfo* ifs, int count);
+
 Net_State GetWirelessState();
 Net_State GetEthernetState();
 Net_State GetNetState();
