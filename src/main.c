@@ -41,8 +41,8 @@ float rx_rates = 0;
 float cpuUsage;
 CPU_OCCUPY cpu_stat1;
 CPU_OCCUPY cpu_stat2;
-Net_State wlanState;
-Net_State ethState;
+// Net_State wlanState;
+// Net_State ethState; // 已废弃，防止未使用警告
 char netSpeedUnit[4][5] = {
     "B/s",
     "KB/s",
@@ -51,10 +51,14 @@ char netSpeedUnit[4][5] = {
 };
 
 void Work();
+void CacheNetIfInfo();
 
 int main(int argc, char* argv[])
 {
     SSD1306_Init();
+
+    // 启动时缓存网卡信息
+    CacheNetIfInfo();
 
     if (!(argc >= 2 && !strcmp(argv[1], "-r")))
     {
@@ -67,8 +71,15 @@ int main(int argc, char* argv[])
         sleep(3);
     }
 
+    time_t last_cache_update = 0;
     while (1)
     {
+        // 每60秒自动刷新一次网卡信息缓存
+        time_t now = time(NULL);
+        if (now - last_cache_update >= 60) {
+            CacheNetIfInfo();
+            last_cache_update = now;
+        }
 #if ENABLE_RUNNING_PERIOD
         time(&timep);
         myTm = localtime(&timep);
@@ -112,6 +123,32 @@ int main(int argc, char* argv[])
     }
 }
 
+// 全局缓存变量
+#define MAX_NETIFS 16
+static NetIfInfo g_ifs[MAX_NETIFS];
+static int g_phy_count = 0, g_vlan_count = 0, g_up_count = 0, g_if_count = 0;
+static NetIfInfo* g_main_if = NULL;
+static int g_cache_valid = 0; // 0:无效 1:有效
+
+void CacheNetIfInfo() {
+    int last_if_count = g_if_count;
+    NetIfInfo last_ifs[MAX_NETIFS];
+    memcpy(last_ifs, g_ifs, sizeof(g_ifs));
+    int ret = GetAllNetIfs(g_ifs, MAX_NETIFS, &g_phy_count, &g_vlan_count, &g_up_count);
+    if (ret > 0) {
+        g_if_count = ret;
+        g_main_if = GetFirstActivePhysical(g_ifs, g_if_count);
+        g_cache_valid = 1;
+        printf("[NetInfo] Cache updated: total=%d, phy=%d, vlan=%d, up=%d\n", g_if_count, g_phy_count, g_vlan_count, g_up_count);
+    } else {
+        printf("[NetInfo] Cache update failed, keep last valid cache\n");
+        memcpy(g_ifs, last_ifs, sizeof(g_ifs));
+        g_if_count = last_if_count;
+        g_main_if = GetFirstActivePhysical(g_ifs, g_if_count);
+        // g_cache_valid 不变
+    }
+}
+
 void Work()
 {
     SSD1306_ClearScreen();
@@ -123,28 +160,39 @@ void Work()
     SSD1306_DrawLine(0, 63, 127, 63, White);
     SSD1306_DrawLine(37, 39, 37, 62, White);
 
-    wlanState = GetWirelessState();
-    ethState = GetEthernetState();
+    // 使用缓存的网卡信息
+    NetIfInfo* ifs = g_ifs;
+    int phy_count = g_phy_count, vlan_count = g_vlan_count, up_count = g_up_count, if_count = g_if_count;
+    NetIfInfo* main_if = g_main_if;
+    // 调试输出
+    // printf("[NetInfo] phy=%d vlan=%d up=%d if_count=%d\n", phy_count, vlan_count, up_count, if_count);
+    (void)ifs; // 防止未使用警告
 
-    if (wlanState == STATE_CONNECT)
-    {
-        SSD1306_DrawBitMap(0, 0, WIFI_CONNECT, 16, 16, White);
-        memset(ipStr, 0, IP_STR_LEN);
-        if (GetLocalIP(WLAN_IF, ipStr) != 0)
-            memset(ipStr, 0, IP_STR_LEN);
-        SSD1306_PutString(17, 4, ipStr, MF_7x10, White);
-    }
-    else if (ethState == STATE_CONNECT)
-    {
+    // VLAN优先显示：只要有VLAN接口就显示VLAN Mode
+    if (vlan_count > 0) {
         SSD1306_DrawBitMap(0, 0, ETH_CONNECT, 16, 16, White);
+        SSD1306_PutString(17, 4, "VLAN Mode", MF_7x10, White);
+    } else if (phy_count > 1) {
+        SSD1306_DrawBitMap(0, 0, ETH_CONNECT, 16, 16, White);
+        SSD1306_PutString(17, 4, "MultiEth", MF_7x10, White);
+        if (main_if) {
+            memset(ipStr, 0, IP_STR_LEN);
+            if (GetLocalIP(main_if->name, ipStr) != 0)
+                memset(ipStr, 0, IP_STR_LEN);
+        }
+    } else if (main_if) {
+        if (strncmp(main_if->name, "wlan", 4) == 0) {
+            SSD1306_DrawBitMap(0, 0, WIFI_CONNECT, 16, 16, White);
+        } else {
+            SSD1306_DrawBitMap(0, 0, ETH_CONNECT, 16, 16, White);
+        }
         memset(ipStr, 0, IP_STR_LEN);
-        if (GetLocalIP(ETH_IF, ipStr) != 0)
+        if (GetLocalIP(main_if->name, ipStr) != 0)
             memset(ipStr, 0, IP_STR_LEN);
         SSD1306_PutString(17, 4, ipStr, MF_7x10, White);
-    }
-    else
-    {
+    } else {
         SSD1306_DrawBitMap(0, 0, NET_ERROR, 16, 16, White);
+        SSD1306_PutString(17, 4, "NoNet", MF_7x10, White);
     }
 
     memset(tempStr, 0, TEMP_STR_LEN);
