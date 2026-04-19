@@ -53,6 +53,9 @@ char netSpeedUnit[4][5] = {
 void Work();
 void CacheNetIfInfo();
 
+// 前向声明
+static NetIfInfo* g_main_if;
+
 int main(int argc, char* argv[])
 {
     SSD1306_Init();
@@ -100,13 +103,13 @@ int main(int argc, char* argv[])
         {
 #endif // ENABLE_RUNNING_PERIOD
             Work();
-            GetCurNetFlow(wlanState == STATE_CONNECT ? WLAN_IF : (ethState == STATE_CONNECT ? ETH_IF : NULL),
-                          &start_rcv_rates, &start_tx_rates);
+            if (g_main_if)
+                GetCurNetFlow(g_main_if->name, &start_rcv_rates, &start_tx_rates);
             get_cpuoccupy((CPU_OCCUPY *)&cpu_stat1);
             sleep(REFRESH_TIME);
             get_cpuoccupy((CPU_OCCUPY *)&cpu_stat2);
-            GetCurNetFlow(wlanState == STATE_CONNECT ? WLAN_IF : (ethState == STATE_CONNECT ? ETH_IF : NULL),
-                          &end_rcv_rates, &end_tx_rates);
+            if (g_main_if)
+                GetCurNetFlow(g_main_if->name, &end_rcv_rates, &end_tx_rates);
 
             cpuUsage = cal_cpuoccupy((CPU_OCCUPY *)&cpu_stat1, (CPU_OCCUPY *)&cpu_stat2);
             rx_rates = (float)(end_rcv_rates - start_rcv_rates) / REFRESH_TIME;
@@ -127,7 +130,7 @@ int main(int argc, char* argv[])
 #define MAX_NETIFS 16
 static NetIfInfo g_ifs[MAX_NETIFS];
 static int g_phy_count = 0, g_vlan_count = 0, g_up_count = 0, g_if_count = 0;
-static NetIfInfo* g_main_if = NULL;
+// static NetIfInfo* g_main_if = NULL; // 已经在上面声明了
 static int g_cache_valid = 0; // 0:无效 1:有效
 
 void CacheNetIfInfo() {
