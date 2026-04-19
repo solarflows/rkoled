@@ -1,6 +1,22 @@
 # rkoled
-# Fork from [Temperature6/OPi4_RTDevInfo](https://github.com/Temperature6/OPi4_RTDevInfo)
-## 如何使用（以香橙派zero3为例）
+
+> 本项目基于 [Temperature6/OPi4_RTDevInfo](https://github.com/Temperature6/OPi4_RTDevInfo) 二次开发，感谢原作者。
+
+## 交叉编译与 Buildroot 支持
+
+本项目已适配 Buildroot 交叉编译环境。编译时请使用 Buildroot 提供的交叉工具链：
+
+```sh
+make CC=aarch64-buildroot-linux-gnu-gcc CFLAGS="-O2" LDFLAGS=""
+```
+- `CC`、`CFLAGS`、`LDFLAGS` 可由 Buildroot 自动传入。
+- Makefile 支持 out-of-tree 构建。
+
+## 依赖说明
+- 依赖 Rockchip/OrangePi 的 WiringOP（不是标准 wiringPi）。
+- 项目已内置所有必要依赖（包括 WiringOP 相关头文件和源码），无需单独引入或安装。
+
+## 使用方法（以香橙派zero3为例）
 
 **0）硬件准备**
 
