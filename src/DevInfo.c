@@ -57,19 +57,24 @@ float GetCpuUsage() {
 }
 
 // Function to get CPU temperature
+// Returns temperature in °C, or -999.0f if sensor file is unavailable
 float GetCpuTemp() {
     FILE *fp;
     char buf[MAX_SIZE];
     double tempVal = 0.0;
 
     fp = fopen(TEMP_FILE_PATH, "r");
-    if (fp != NULL) {
-        fread(buf, 1, MAX_SIZE, fp);
-        tempVal = atof(buf) / 1000.0;
-        fclose(fp);
+    if (fp == NULL) {
+        return -999.0f;  // Sentinel: sensor not available
     }
-
-    return tempVal;
+    size_t n = fread(buf, 1, MAX_SIZE - 1, fp);
+    fclose(fp);
+    if (n == 0) {
+        return -999.0f;
+    }
+    buf[n] = '\0';  // Ensure null-termination for atof
+    tempVal = atof(buf) / 1000.0;
+    return (float)tempVal;
 }
 
 // Function to get system memory usage percentage

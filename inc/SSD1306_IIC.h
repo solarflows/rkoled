@@ -6,11 +6,11 @@
 #define SSD1306_IIC_H
 
 
-#include "memory.h"
-#include "math.h"
-#include "stdlib.h"
+#include <string.h>
+#include <math.h>
+#include <stdlib.h>
 #include "MatrixFont.h"
-#include "stdint.h"
+#include <stdint.h>
 
 #define OLED_USE_IIC                hi2c1
 #define OLED_ADDR                   0x3C
