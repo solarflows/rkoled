@@ -109,16 +109,70 @@ int GetMemUsage() {
 }
 
 // Function to get disk usage percentage
+// Scans /proc/mounts to find the largest real (non-virtual) filesystem,
+// which correctly handles overlayfs used in HAOS / Docker environments.
 float GetDiskUsagePercentage() {
     struct statfs diskInfo;
-    if (statfs("/home", &diskInfo) == -1) {
-        return 0.0; // Error
+    float bestUsage = 0.0;
+    unsigned long long bestTotal = 0;
+
+    // Strategy: parse /proc/mounts to find the largest real filesystem.
+    // This avoids overlayfs, tmpfs, and other virtual FS that report
+    // misleading free space (e.g., HAOS /home is overlayfs upper dir).
+    FILE* fp = fopen("/proc/mounts", "r");
+    if (fp != NULL) {
+        char line[512];
+        char device[128], mountPoint[128], fsType[64];
+        while (fgets(line, sizeof(line), fp)) {
+            if (sscanf(line, "%127s %127s %63s", device, mountPoint, fsType) == 3) {
+                // Skip virtual, pseudo, and overlay filesystems
+                if (strcmp(fsType, "overlay") == 0 ||
+                    strcmp(fsType, "tmpfs") == 0 ||
+                    strcmp(fsType, "devtmpfs") == 0 ||
+                    strcmp(fsType, "sysfs") == 0 ||
+                    strcmp(fsType, "proc") == 0 ||
+                    strcmp(fsType, "squashfs") == 0 ||
+                    strcmp(fsType, "cgroup") == 0 ||
+                    strcmp(fsType, "cgroup2") == 0 ||
+                    strcmp(fsType, "debugfs") == 0 ||
+                    strcmp(fsType, "tracefs") == 0 ||
+                    strcmp(fsType, "securityfs") == 0 ||
+                    strcmp(fsType, "pstore") == 0 ||
+                    strcmp(fsType, "configfs") == 0 ||
+                    strcmp(fsType, "ramfs") == 0 ||
+                    strcmp(fsType, "hugetlbfs") == 0 ||
+                    strncmp(fsType, "fuse.", 5) == 0) {
+                    continue;
+                }
+                // Found a real filesystem — check its size
+                if (statfs(mountPoint, &diskInfo) == 0) {
+                    unsigned long long total = (unsigned long long)diskInfo.f_blocks * diskInfo.f_bsize;
+                    if (total > bestTotal) {
+                        bestTotal = total;
+                        unsigned long long avail = (unsigned long long)diskInfo.f_bavail * diskInfo.f_bsize;
+                        if (total > 0) {
+                            bestUsage = (1.0f - (float)avail / (float)total) * 100.0f;
+                        }
+                    }
+                }
+            }
+        }
+        fclose(fp);
+        if (bestTotal > 0) return bestUsage;
     }
 
-    unsigned long long totalDisk = diskInfo.f_blocks * diskInfo.f_bsize;
-    unsigned long long availableDisk = diskInfo.f_bavail * diskInfo.f_bsize;
+    // Fallback: try common data partition paths in order
+    const char* paths[] = {"/mnt/data", "/data", "/home", "/", NULL};
+    for (int i = 0; paths[i] != NULL; i++) {
+        if (statfs(paths[i], &diskInfo) == 0) {
+            unsigned long long total = (unsigned long long)diskInfo.f_blocks * diskInfo.f_bsize;
+            // Only consider filesystems larger than 100 MB
+            if (total > 100ULL * 1024 * 1024) {
+                unsigned long long avail = (unsigned long long)diskInfo.f_bavail * diskInfo.f_bsize;
+                return (1.0f - (float)avail / (float)total) * 100.0f;
+            }
+        }
+    }
 
-    float usagePercentage = (1 - (float)availableDisk / totalDisk) * 100.0;
-
-    return usagePercentage;
+    return 0.0;
 }

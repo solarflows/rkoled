@@ -17,5 +17,19 @@
 #define END_M           59  //结束运行分
 #endif //ENABLE_RUNNING_PERIOD
 
+/* ========== OLED 防烧屏配置 ========== */
+/* 启用防烧屏：1=启用, 0=禁用 */
+#define BURNIN_PREVENTION           1
+/* 像素偏移间隔(秒)：每隔多久垂直偏移1像素 */
+#define SHIFT_INTERVAL_SEC          120
+/* 夜间低对比度：1=启用, 0=禁用 */
+#define NIGHT_CONTRAST_ENABLE       1
+/* 夜间对比度值 (0x00最暗 ~ 0xFF最亮, 默认0x7F) */
+#define NIGHT_CONTRAST              0x2F
+/* 夜间模式开始-时(0-23) */
+#define NIGHT_BEG_H                 0
+/* 夜间模式结束-时(0-23) */
+#define NIGHT_END_H                 6
+
 #define WIRELESS    "/sys/class/net/"WLAN_IF"/operstate"
 #define ETHERNET    "/sys/class/net/"ETH_IF"/operstate"

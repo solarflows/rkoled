@@ -54,6 +54,7 @@ void SSD1306_UpdateScreen();
 void SSD1306_SetContrast(uint8_t val);
 void SSD1306_TurnOn(SSD1306_State state);
 void SSD1306_InvertColor(SSD1306_State state);
+void SSD1306_SetDisplayOffset(uint8_t offset);
 
 
 #endif //SSD1306_IIC_H

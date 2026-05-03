@@ -154,6 +154,37 @@ void CacheNetIfInfo() {
 
 void Work()
 {
+#if BURNIN_PREVENTION
+    // --- 防烧屏：硬件垂直像素偏移 ---
+    // 利用 SSD1306 Display Offset (0xD3) 在 0~2 像素间来回偏移，
+    // 使静态内容(分隔线、标签)不会始终点亮同一行像素，有效延缓烧屏。
+    static time_t last_shift_time = 0;
+    static uint8_t display_offset = 0;
+    static int shift_dir = 1;
+
+    time_t now = time(NULL);
+    if (now - last_shift_time >= SHIFT_INTERVAL_SEC) {
+        display_offset = (display_offset + shift_dir) & 0x3F;
+        if (display_offset >= 2) shift_dir = -1;
+        if (display_offset == 0) shift_dir = 1;
+        last_shift_time = now;
+    }
+    SSD1306_SetDisplayOffset(display_offset);
+
+#if NIGHT_CONTRAST_ENABLE
+    // --- 夜间低亮度模式 ---
+    // 夜间降低 OLED 对比度，既防烧屏又减少光污染
+    struct tm* tm_info = localtime(&now);
+    int hour = tm_info->tm_hour;
+    static int last_night_state = -1;
+    int is_night = (hour >= NIGHT_BEG_H && hour < NIGHT_END_H) ? 1 : 0;
+    if (is_night != last_night_state) {
+        SSD1306_SetContrast(is_night ? NIGHT_CONTRAST : 0x7F);
+        last_night_state = is_night;
+    }
+#endif
+#endif // BURNIN_PREVENTION
+
     SSD1306_ClearScreen();
 
     SSD1306_DrawLine(0, 0, 127, 0, White);

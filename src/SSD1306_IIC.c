@@ -223,6 +223,14 @@ void SSD1306_SetContrast(uint8_t val)
     WriteCmd(val);
 }
 
+// 设置显示起始行偏移 (0-63)，用于防烧屏像素偏移
+// 硬件级垂直滚动，不修改缓冲区内容
+void SSD1306_SetDisplayOffset(uint8_t offset)
+{
+    WriteCmd(0xD3);
+    WriteCmd(offset & 0x3F);
+}
+
 void SSD1306_DrawLine(uint8_t start_x, uint8_t start_y, uint8_t end_x, uint8_t end_y, SSD1306_Color color)
 {
 
