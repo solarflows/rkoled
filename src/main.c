@@ -42,7 +42,9 @@ static void fatal_crash_handler(int sig) {
 int main(int argc, char *argv[]) {
     app_config_t cfg;
     config_set_defaults(&cfg);
-    config_parse_args(&cfg, argc, argv);
+    if (config_parse_args(&cfg, argc, argv) != 0) {
+        return 1;
+    }
 
     // Daemonize if requested
 #ifdef __linux__

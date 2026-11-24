@@ -7,7 +7,7 @@
 void config_set_defaults(app_config_t *cfg) {
     if (!cfg) return;
     memset(cfg, 0, sizeof(*cfg));
-    strncpy(cfg->i2c_device, "/dev/i2c-1", sizeof(cfg->i2c_device) - 1);
+    cfg->i2c_device[0] = '\0';   // Mandatory: must be explicitly specified via -d / --device
     cfg->i2c_addr = 0x3C;
     cfg->disp_type = DISP_SSD1306;
     cfg->ui_style = STYLE_ASTRA; // Default: new Astra layout
@@ -120,15 +120,31 @@ int config_parse_args(app_config_t *cfg, int argc, char *argv[]) {
         }
     }
 
+    // Mandatory parameter validation: I2C device node must be explicitly specified
+    if (!cfg->dry_run && cfg->i2c_device[0] == '\0') {
+        fprintf(stderr, "\n============================================================\n");
+        fprintf(stderr, "[CRITICAL ERROR] Mandatory parameter missing: I2C device (-d / --device)!\n");
+        fprintf(stderr, "------------------------------------------------------------\n");
+        fprintf(stderr, "Reason: Direct I2C hardware access requires explicit bus specification\n");
+        fprintf(stderr, "        to prevent accidental collisions or damage to sensitive chips\n");
+        fprintf(stderr, "        (such as PMIC regulators on RK356x /dev/i2c-0).\n\n");
+        fprintf(stderr, "Usage: %s -d <device> [-a <addr>] [-t <type>] [-s <style>]\n", argv[0]);
+        fprintf(stderr, "Example: %s -d /dev/i2c-1 -a 0x3c -t ssd1306 -s astra\n", argv[0]);
+        fprintf(stderr, "         %s -X (for software simulation without hardware)\n", argv[0]);
+        fprintf(stderr, "Run '%s --help' for all available options.\n", argv[0]);
+        fprintf(stderr, "============================================================\n\n");
+        return -1;
+    }
+
     return 0;
 }
 
 void config_print_help(const char *prog_name) {
     printf("rkoled %s - Universal High-Density Low-Overhead OLED System Monitor\n\n", RKOLED_VERSION);
-    printf("Usage: %s [OPTIONS]\n\n", prog_name);
+    printf("Usage: %s -d <device> [OPTIONS]\n\n", prog_name);
     printf("Hardware Options:\n");
-    printf("  -d, --device <path>     I2C device path (default: /dev/i2c-1)\n");
-    printf("  -a, --addr <hex>        I2C slave address (default: 0x3c)\n");
+    printf("  -d, --device <path>     I2C device path (REQUIRED, e.g. /dev/i2c-1)\n");
+    printf("  -a, --addr <hex>        I2C slave address (default: 0x3c, valid: 0x3c, 0x3d)\n");
     printf("  -t, --type <type>       Display controller (ssd1306, sh1106; default: ssd1306)\n");
     printf("  -c, --contrast <0-255>  OLED display contrast (default: 127)\n\n");
     printf("Display & UI Options:\n");

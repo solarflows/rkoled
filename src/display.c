@@ -71,6 +71,18 @@ int display_init(app_config_t *cfg) {
     memset(s_buffer, 0, sizeof(s_buffer));
 
     // ========================================================
+    // HARDWARE SAFETY INVARIANT 0: Mandatory Device Specification
+    // Refuse access immediately if I2C bus device path is empty.
+    // ========================================================
+    if (cfg->i2c_device[0] == '\0' && !cfg->dry_run) {
+        fprintf(stderr, "\n============================================================\n");
+        fprintf(stderr, "[HARDWARE SAFETY REFUSAL] No I2C device specified!\n");
+        fprintf(stderr, "Reason: Explicit device path (-d /dev/i2c-X) is required.\n");
+        fprintf(stderr, "============================================================\n\n");
+        return -1;
+    }
+
+    // ========================================================
     // HARDWARE SAFETY INVARIANT 1: PMIC Bus Blacklist
     // On Rockchip RK356x / Panther-X2, i2c-0 hosts the RK809 PMIC
     // and TCS4525 CPU voltage regulators. Refuse access immediately.

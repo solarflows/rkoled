@@ -35,11 +35,11 @@
 ## 二、 命令行参数体系 (CLI Reference)
 
 ```text
-Usage: rkoled [OPTIONS]
+Usage: rkoled -d <device> [OPTIONS]
 
 Hardware Options:
-  -d, --device <path>     I2C 设备节点路径 (默认: /dev/i2c-1)
-  -a, --addr <hex>        I2C 从机地址 (默认: 0x3c)
+  -d, --device <path>     I2C 设备节点路径 (必须强制指定，例如: /dev/i2c-1)
+  -a, --addr <hex>        I2C 从机地址 (默认: 0x3c，支持 0x3c / 0x3d)
   -t, --type <type>       屏幕驱动芯片型号: 'ssd1306' (默认), 'sh1106'
   -c, --contrast <0-255>  OLED 发光对比度 (默认: 127)
 
@@ -76,17 +76,17 @@ make
 
 ### 2. 命令行运行测试
 ```bash
-# 默认模式启动 (Astra 风格, /dev/i2c-1, 自动识别主网卡)
-sudo ./rkoled
+# 默认模式启动 (必须指定 I2C 节点，Astra 风格，自动识别主网卡)
+sudo ./rkoled -d /dev/i2c-1
 
 # 喜欢原版经典四宫格 UI
-sudo ./rkoled -s classic
+sudo ./rkoled -d /dev/i2c-1 -s classic
 
 # 指定以太网或 VLAN 虚拟网卡
-sudo ./rkoled -i end0.10
+sudo ./rkoled -d /dev/i2c-1 -i end0.10
 
 # 开启多 VLAN 自动轮播模式
-sudo ./rkoled -v cycle
+sudo ./rkoled -d /dev/i2c-1 -v cycle
 
 # 指定 I2C 总线节点与屏幕对比度
 sudo ./rkoled -d /dev/i2c-3 -c 200
@@ -106,7 +106,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/rkoled -d /dev/i2c-1 -s astra
+ExecStart=/usr/bin/rkoled -d /dev/i2c-1 -a 0x3c -t ssd1306 -s astra
 Restart=on-failure
 RestartSec=5s
 KillMode=process
