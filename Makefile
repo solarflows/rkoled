@@ -1,40 +1,28 @@
-# C Config
-INCLUDE_PATHS   := ./inc
-SOURCE_PATHS    := ./src
-OBJECT_DIR      := ./obj
-LIBS_NAME       := pthread
-TARGET_FILE     := ./RTDevInfo
-CFLAGS       	:= -c
+CC ?= gcc
+CFLAGS ?= -O2 -Wall -Wextra -std=gnu99
+INCLUDES := -I./inc
+TARGET := rkoled
+COMPAT_TARGET := RTDevInfo
 
-CXX_FILES       := $(shell find $(SOURCE_PATHS)/*.c)
-HXX_FILES		:= $(shell find $(INCLUDE_PATHS)/*.h)
-OBJ_FILES       := $(patsubst $(SOURCE_PATHS)/%.c,$(OBJECT_DIR)/%.o,$(CXX_FILES))
-LIBS            := $(LIBS_NAME:%=-l%)
-INCLUDES        := $(INCLUDE_PATHS:%=-I%)
+SRCS := $(wildcard src/*.c)
+OBJS := $(SRCS:.c=.o)
 
-CC = gcc
+all: $(TARGET) $(COMPAT_TARGET)
 
-$(OBJECT_DIR)/%.o : $(SOURCE_PATHS)/%.c $(HXX_FILES)
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< $(INCLUDES) -o $@
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^
 
-compile : $(TARGET_FILE)
+$(COMPAT_TARGET): $(TARGET)
+	@ln -sf $(TARGET) $@ 2>/dev/null || cp -f $(TARGET) $@
 
-$(TARGET_FILE) : $(OBJ_FILES)
-	$(CC) -o $@ $(OBJ_FILES) $(LIBS)
+src/%.o: src/%.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-build: $(TARGET_FILE)
+clean:
+	rm -f src/*.o $(TARGET) $(COMPAT_TARGET)
 
-clean :
-	@rm -rf $(OBJECT_DIR)
-	@rm -f $(TARGET_FILE)
+install: $(TARGET)
+	install -D -m 755 $(TARGET) $(DESTDIR)/usr/bin/$(TARGET)
+	ln -sf $(TARGET) $(DESTDIR)/usr/bin/$(COMPAT_TARGET)
 
-run : $(TARGET_FILE)
-	$(TARGET_FILE)
-
-init :
-	mkdir inc
-	mkdir src
-	touch src/main.c
-
-.PHONY : build compile run clean init
+.PHONY: all clean install

@@ -1,0 +1,7 @@
+# Build artifacts
+*.o
+obj/
+rkoled
+RTDevInfo
+*.exe
+*.tar.gz
