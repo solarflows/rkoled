@@ -1,4 +1,4 @@
-# rkoled 2.0 - 通用超低耗 Linux OLED (SSD1306 / SH1106) 系统监视守护进程
+# rkoled 1.0 - 通用超低耗 Linux OLED (SSD1306 / SH1106) 系统监视守护进程
 
 > **专为嵌入式 Linux 单板电脑 (Panther-X2, 树莓派, 香橙派, 友善, x86 等) 打造的轻量级硬件监控守护进程**
 > 脱离庞大的 wiringPi 依赖，纯原生 Linux I2C ioctl 通信，CPU 时间由原版大幅缩减至 `< 0.03%`，支持多 UI 风格自由切换与丰富 CLI 参数。

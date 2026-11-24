@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define RKOLED_VERSION "1.0.0"
+
 typedef enum {
     DISP_SSD1306 = 0,
     DISP_SH1106  = 1

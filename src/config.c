@@ -111,7 +111,7 @@ int config_parse_args(app_config_t *cfg, int argc, char *argv[]) {
                 cfg->dry_run = true;
                 break;
             case 'V':
-                printf("rkoled version 2.0.0 (universal low-overhead daemon)\n");
+                printf("rkoled version %s (universal low-overhead daemon)\n", RKOLED_VERSION);
                 exit(0);
             case 'h':
             default:
@@ -124,7 +124,7 @@ int config_parse_args(app_config_t *cfg, int argc, char *argv[]) {
 }
 
 void config_print_help(const char *prog_name) {
-    printf("rkoled 2.0 - Universal High-Density Low-Overhead OLED System Monitor\n\n");
+    printf("rkoled %s - Universal High-Density Low-Overhead OLED System Monitor\n\n", RKOLED_VERSION);
     printf("Usage: %s [OPTIONS]\n\n", prog_name);
     printf("Hardware Options:\n");
     printf("  -d, --device <path>     I2C device path (default: /dev/i2c-1)\n");
