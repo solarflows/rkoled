@@ -36,7 +36,7 @@ void ui_render_classic(const system_telemetry_t *t, const app_config_t *cfg) {
 
     // 4. Middle Right (X: 83..127, Y: 15..38)
     display_put_string(91, 17, "Temp", &FONT_7x10, PIXEL_WHITE, 128);
-    snprintf(buf, sizeof(buf), "%.1fC", t->cpu_temp);
+    snprintf(buf, sizeof(buf), "%.1f℃", t->cpu_temp);
     display_put_string(88, 28, buf, &FONT_7x10, PIXEL_WHITE, 128);
 
     // 5. Bottom Left (X: 0..36, Y: 39..62)
